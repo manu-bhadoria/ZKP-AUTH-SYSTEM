@@ -47,7 +47,6 @@ impl Circuit<Scalar> for CredentialProofCircuit {
             self.hash.ok_or(SynthesisError::AssignmentMissing)
         })?;
 
-        // Enforce a constraint: pre_image_var * 2 == hash_var
         cs.enforce(
             || "double pre_image constraint",
             |lc| lc + pre_image_var,
@@ -62,11 +61,9 @@ impl Circuit<Scalar> for CredentialProofCircuit {
 fn main() {
     let user = register_user("alice".to_string(), "password123".to_string());
 
-    // Example scalar values
     let example_pre_image = Scalar::from(123456789u64); // Dummy private input
     let example_hash = Scalar::from(123456789u64 * 2); // Dummy public input
 
-    // Create two instances of the circuit for parameters and proof
     let params_circuit = CredentialProofCircuit {
         pre_image: Some(example_pre_image),
         hash: Some(example_hash),
@@ -77,15 +74,14 @@ fn main() {
         hash: Some(example_hash),
     };
 
-    // Generate parameters for the circuit
+
     let params = generate_random_parameters::<Bls12, _, _>(params_circuit, &mut thread_rng()).unwrap();
 
-    // Create a proof based on the parameters
     let proof = create_random_proof(proof_circuit, &params, &mut thread_rng()).unwrap();
 
     println!("Proof generated for user: {}", user.username);
 
-    // Verify the proof
+    // Verify proof
     let pvk = prepare_verifying_key(&params.vk);
     let inputs = vec![Scalar::from(123456789u64 * 2)];
     assert!(groth16_verify_proof(&pvk, &proof, &inputs).is_ok(), "Proof verification failed");
